@@ -122,6 +122,49 @@ Claude Code 执行工具前
 
 单 exe，零运行时依赖。原生 UTF-8 不乱码，系统证书不报 SSL 错，10ms 启动，不受 Python 环境折腾。
 
+## 快速开始
+
+### 1. 下载
+
+从 [Releases](https://github.com/superunderpants/automodel-for-cc/releases) 页面下载对应平台的二进制文件。
+
+### 2. 配置
+
+创建 `%APPDATA%\auto-guard\config.yaml`（Linux/macOS：`~/.config/auto-guard/config.yaml`）：
+
+```yaml
+llm:
+  provider: "deepseek"       # deepseek | openai | openrouter | ollama | custom
+  api_key: "sk-xxx"          # 你的 API key
+  model: "deepseek-chat"
+```
+
+三行，完事。
+
+### 3. 挂载 Hook
+
+在 `~/.claude/settings.json` 中添加：
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": ".*",
+      "hooks": [{
+        "type": "command",
+        "command": "C:/path/to/automodel-for-cc.exe"
+      }]
+    }]
+  }
+}
+```
+
+重启 Claude Code 即可生效。
+
+### 4. 验证
+
+随便跟 Claude Code 说句话，弹窗大幅减少就是成功了。
+
 ## 配置示例
 
 ```yaml
