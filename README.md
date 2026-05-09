@@ -85,25 +85,70 @@ Type anything in Claude Code. You'll see far fewer permission prompts.
 | Anthropic | `"anthropic"` |
 | Custom (any OpenAI-compatible) | `"custom"` + `base_url` |
 
-## Comparison
-
-| | automodel-for-cc | nah | Claude Code auto mode |
-|---|---|---|---|
-| Setup | 1 binary + 3 lines | pip + 50+ lines config | built-in |
-| Config philosophy | sensible defaults | fully programmable | fixed policy |
-| Reviewer context | reasoning-blind | full transcript | reasoning-blind |
-| API dependency | any OpenAI-compatible | OpenRouter | Anthropic only |
-| Latency (tier 1-2) | <1ms | ~50ms (Python) | 0ms |
-| Latency (tier 3) | 2-5s | 3-5s | 0.5-2s |
-
-## Build from source
-
-```bash
-go build -o automodel-for-cc.exe .
-```
-
-Single binary, zero runtime dependencies. Not even a config file parser library at runtime (embedded YAML is compiled in).
-
 ## License
 
 MIT
+
+---
+
+# automodel-for-cc 中文文档
+
+## 这是什么
+
+一个 Claude Code 的自动权限审核工具。**一个 exe，三行配置，省掉 80% 的弹窗。**
+
+Claude Code 自带的 auto mode 需要 Anthropic API + Sonnet 4.6。如果你用的第三方 API（如 DeepSeek），这个功能直接不可用。已有的开源方案如 nah 功能强大但配置繁琐：42 种 action type、YAML 策略、路径白名单、命令分类表……
+
+`automodel-for-cc` 反其道而行：**内置安全基线，用户只需配置 LLM API key**。
+
+## 工作原理
+
+```
+Claude Code 执行工具前
+        ↓
+   settings.json hook → automodel-for-cc.exe
+        ↓
+   第 1 层 — 硬编码白名单（只读工具 + 安全 Bash 命令）
+      → 毫秒级放行，不调 API
+   第 2 层 — 项目内安全操作（项目目录内的写入/编辑）
+      → 毫秒级放行，不调 API
+   第 3 层 — 其余所有操作 → LLM 审核
+      → 安全就放行，可疑就弹窗（附带 AI 理由）
+```
+
+**推理盲（reasoning-blind）**：审核模型只看你的消息和待执行命令，不看 assistant 的推理过程。agent 没法用"这个操作很安全"之类的话术说服审核模型。
+
+## 与 nah 的对比
+
+| | automodel-for-cc | nah |
+|---|---|---|
+| 部署 | 一个 exe + 3 行 yaml | pip install + 配 hook + 50+ 行 config |
+| 设计哲学 | 内置安全基线，开箱即用 | 框架，需手动配置所有规则 |
+| 依赖 | 单文件，零运行时依赖 | Python + pip 包 |
+| 项目检测 | git → CLAUDE.md → package.json → CWD | 仅 git（无 git 则全算项目外） |
+| 编码问题 | Go 原生 UTF-8 | Windows GBK 需手动修 |
+| 审核上下文 | reasoning-blind | 全量 transcript |
+| 第 1-2 层延迟 | <1ms | ~50ms |
+
+## 为什么用 Go
+
+Python（nah）在 Windows 上踩过的坑：GBK 编码崩溃、SSL 证书信任、pip 安装依赖链、启动慢。Go 编译成单个 exe，零运行时依赖，原生 UTF-8，系统证书自动信任，启动时间可忽略。
+
+## 配置示例
+
+```yaml
+# %APPDATA%\auto-guard\config.yaml
+llm:
+  provider: "deepseek"       # 内置 base_url 映射
+  api_key: "sk-xxx"          # 你的 API key
+  model: "deepseek-chat"
+
+# 可选：高风险命令跳过 AI 直接弹窗
+dangerous:
+  - git push --force
+  - rm -rf /
+```
+
+支持的 provider：`deepseek` | `openai` | `openrouter` | `ollama` | `anthropic` | `custom`
+
+选 `custom` 时才需要手动填 `base_url`。
