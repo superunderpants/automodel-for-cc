@@ -29,7 +29,23 @@ Your Claude Code session
 
 ## Quick start
 
-### 1. Install
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.ps1 | iex
+```
+
+**macOS / Linux:**
+```bash
+curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.sh | bash
+```
+
+One line. Downloads the binary, sets your API key, and wires up the Claude Code hook. Restart Claude Code and you're done.
+
+> **Manual install?** See [below](#manual-install).
+
+## Manual install
+
+### 1. Download
 
 **Windows (PowerShell):**
 ```powershell
@@ -40,28 +56,28 @@ curl -L -o "$dir\automodel-for-cc.exe" https://github.com/superunderpants/automo
 **macOS / Linux:**
 ```bash
 mkdir -p ~/.local/bin
-curl -L -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-$(uname -s | tr A-Z a-z)-$(uname -m)
+curl -sL -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-$(uname -s | tr A-Z a-z)-$(uname -m)
 chmod +x ~/.local/bin/automodel-for-cc
 ```
 
-### 2. Config
+### 2. API key
 
-Create `%APPDATA%\auto-guard\config.yaml` (Windows) or `~/.config/auto-guard/config.yaml` (macOS/Linux):
+Set `DEEPSEEK_API_KEY` environment variable, or create `config.yaml`:
+
+*Windows:* `%APPDATA%\auto-guard\config.yaml`
+*macOS/Linux:* `~/.config/auto-guard/config.yaml`
 
 ```yaml
 llm:
-  provider: "deepseek"       # deepseek | openai | openrouter | ollama | custom
-  api_key: "sk-xxx"          # your API key
-  model: "deepseek-chat"     # model name
+  provider: "deepseek"
+  api_key: "sk-xxx"
+  model: "deepseek-chat"
 ```
-
-That's it. Three lines.
 
 ### 3. Hook
 
 Add to `~/.claude/settings.json`:
 
-**Windows:**
 ```json
 {
   "hooks": {
@@ -69,33 +85,14 @@ Add to `~/.claude/settings.json`:
       "matcher": ".*",
       "hooks": [{
         "type": "command",
-        "command": "C:/Users/<you>/AppData/Roaming/auto-guard/automodel-for-cc.exe"
+        "command": "/path/to/automodel-for-cc"
       }]
     }]
   }
 }
 ```
 
-**macOS / Linux:**
-```json
-{
-  "hooks": {
-    "PreToolUse": [{
-      "matcher": ".*",
-      "hooks": [{
-        "type": "command",
-        "command": "/home/<you>/.local/bin/automodel-for-cc"
-      }]
-    }]
-  }
-}
-```
-
-Restart Claude Code. Done.
-
-### 4. Verify
-
-Type anything in Claude Code. You'll see far fewer permission prompts.
+Restart Claude Code.
 
 ## Supported providers
 
@@ -153,7 +150,23 @@ Claude Code 执行工具前
 
 ## 快速开始
 
-### 1. 安装
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.ps1 | iex
+```
+
+**macOS / Linux:**
+```bash
+curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.sh | bash
+```
+
+一行命令。自动下载、配置 API key、挂载 Claude Code hook。重启 Claude Code 即可生效。
+
+> 手动安装？见[下方](#手动安装)。
+
+## 手动安装
+
+### 1. 下载
 
 **Windows (PowerShell):**
 ```powershell
@@ -164,28 +177,28 @@ curl -L -o "$dir\automodel-for-cc.exe" https://github.com/superunderpants/automo
 **macOS / Linux:**
 ```bash
 mkdir -p ~/.local/bin
-curl -L -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-$(uname -s | tr A-Z a-z)-$(uname -m)
+curl -sL -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-$(uname -s | tr A-Z a-z)-$(uname -m)
 chmod +x ~/.local/bin/automodel-for-cc
 ```
 
-### 2. 配置
+### 2. API key
 
-创建 `%APPDATA%\auto-guard\config.yaml`（Linux/macOS：`~/.config/auto-guard/config.yaml`）：
+设置环境变量 `DEEPSEEK_API_KEY`，或者创建 `config.yaml`：
+
+*Windows:* `%APPDATA%\auto-guard\config.yaml`
+*macOS/Linux:* `~/.config/auto-guard/config.yaml`
 
 ```yaml
 llm:
-  provider: "deepseek"       # deepseek | openai | openrouter | ollama | custom
-  api_key: "sk-xxx"          # 你的 API key
+  provider: "deepseek"
+  api_key: "sk-xxx"
   model: "deepseek-chat"
 ```
 
-三行，完事。
-
-### 3. 挂载 Hook
+### 3. Hook
 
 在 `~/.claude/settings.json` 中添加：
 
-**Windows:**
 ```json
 {
   "hooks": {
@@ -193,33 +206,14 @@ llm:
       "matcher": ".*",
       "hooks": [{
         "type": "command",
-        "command": "C:/Users/<你的用户名>/AppData/Roaming/auto-guard/automodel-for-cc.exe"
+        "command": "/path/to/automodel-for-cc"
       }]
     }]
   }
 }
 ```
 
-**macOS / Linux:**
-```json
-{
-  "hooks": {
-    "PreToolUse": [{
-      "matcher": ".*",
-      "hooks": [{
-        "type": "command",
-        "command": "/home/<你的用户名>/.local/bin/automodel-for-cc"
-      }]
-    }]
-  }
-}
-```
-
-重启 Claude Code 即可生效。
-
-### 4. 验证
-
-随便跟 Claude Code 说句话，弹窗大幅减少就是成功了。
+重启 Claude Code。
 
 ## 配置示例
 
