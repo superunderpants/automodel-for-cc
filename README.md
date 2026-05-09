@@ -85,6 +85,12 @@ Type anything in Claude Code. You'll see far fewer permission prompts.
 | Anthropic | `"anthropic"` |
 | Custom (any OpenAI-compatible) | `"custom"` + `base_url` |
 
+## Build from source
+
+```bash
+go build -o automodel-for-cc.exe ./src/
+```
+
 ## License
 
 MIT
