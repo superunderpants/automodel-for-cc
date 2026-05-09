@@ -29,12 +29,19 @@ Your Claude Code session
 
 ## Quick start
 
-### 1. Download
+### 1. Install
 
+**Windows (PowerShell):**
+```powershell
+$dir = "$env:APPDATA\auto-guard"; mkdir $dir -Force | Out-Null
+curl -L -o "$dir\automodel-for-cc.exe" https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-windows-amd64.exe
+```
+
+**macOS / Linux:**
 ```bash
-# Download the binary for your platform
-# Windows: automodel-for-cc.exe
-# macOS/Linux: automodel-for-cc
+mkdir -p ~/.local/bin
+curl -L -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-$(uname -s | tr A-Z a-z)-$(uname -m)
+chmod +x ~/.local/bin/automodel-for-cc
 ```
 
 ### 2. Config
@@ -54,6 +61,7 @@ That's it. Three lines.
 
 Add to `~/.claude/settings.json`:
 
+**Windows:**
 ```json
 {
   "hooks": {
@@ -61,7 +69,22 @@ Add to `~/.claude/settings.json`:
       "matcher": ".*",
       "hooks": [{
         "type": "command",
-        "command": "C:/path/to/automodel-for-cc.exe"
+        "command": "C:/Users/<you>/AppData/Roaming/auto-guard/automodel-for-cc.exe"
+      }]
+    }]
+  }
+}
+```
+
+**macOS / Linux:**
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": ".*",
+      "hooks": [{
+        "type": "command",
+        "command": "/home/<you>/.local/bin/automodel-for-cc"
       }]
     }]
   }
@@ -130,9 +153,20 @@ Claude Code 执行工具前
 
 ## 快速开始
 
-### 1. 下载
+### 1. 安装
 
-从 [Releases](https://github.com/superunderpants/automodel-for-cc/releases) 页面下载对应平台的二进制文件。
+**Windows (PowerShell):**
+```powershell
+$dir = "$env:APPDATA\auto-guard"; mkdir $dir -Force | Out-Null
+curl -L -o "$dir\automodel-for-cc.exe" https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-windows-amd64.exe
+```
+
+**macOS / Linux:**
+```bash
+mkdir -p ~/.local/bin
+curl -L -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/automodel-for-cc/releases/latest/download/automodel-for-cc-$(uname -s | tr A-Z a-z)-$(uname -m)
+chmod +x ~/.local/bin/automodel-for-cc
+```
 
 ### 2. 配置
 
@@ -151,6 +185,7 @@ llm:
 
 在 `~/.claude/settings.json` 中添加：
 
+**Windows:**
 ```json
 {
   "hooks": {
@@ -158,7 +193,22 @@ llm:
       "matcher": ".*",
       "hooks": [{
         "type": "command",
-        "command": "C:/path/to/automodel-for-cc.exe"
+        "command": "C:/Users/<你的用户名>/AppData/Roaming/auto-guard/automodel-for-cc.exe"
+      }]
+    }]
+  }
+}
+```
+
+**macOS / Linux:**
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": ".*",
+      "hooks": [{
+        "type": "command",
+        "command": "/home/<你的用户名>/.local/bin/automodel-for-cc"
       }]
     }]
   }

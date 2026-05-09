@@ -13,19 +13,19 @@ jobs:
           - os: windows
             goos: windows
             goarch: amd64
-            ext: .exe
+            binary: automodel-for-cc-windows-amd64.exe
           - os: macos
             goos: darwin
             goarch: amd64
-            ext: ""
+            binary: automodel-for-cc-darwin-amd64
           - os: macos-arm
             goos: darwin
             goarch: arm64
-            ext: ""
+            binary: automodel-for-cc-darwin-arm64
           - os: linux
             goos: linux
             goarch: amd64
-            ext: ""
+            binary: automodel-for-cc-linux-amd64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -33,12 +33,12 @@ jobs:
           go-version: "1.21"
       - name: Build
         run: |
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o automodel-for-cc${{ matrix.ext }} ./src/
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ${{ matrix.binary }} ./src/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: automodel-for-cc-${{ matrix.os }}
-          path: automodel-for-cc${{ matrix.ext }}
+          name: ${{ matrix.binary }}
+          path: ${{ matrix.binary }}
 
   release:
     needs: build
@@ -49,7 +49,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            automodel-for-cc-windows/automodel-for-cc.exe
-            automodel-for-cc-macos/automodel-for-cc
-            automodel-for-cc-macos-arm/automodel-for-cc
-            automodel-for-cc-linux/automodel-for-cc
+            automodel-for-cc-windows-amd64.exe/automodel-for-cc-windows-amd64.exe
+            automodel-for-cc-darwin-amd64/automodel-for-cc-darwin-amd64
+            automodel-for-cc-darwin-arm64/automodel-for-cc-darwin-arm64
+            automodel-for-cc-linux-amd64/automodel-for-cc-linux-amd64
