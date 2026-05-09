@@ -1,0 +1,12 @@
+# auto-guard config — minimal, one-time setup
+llm:
+  provider: "deepseek"       # deepseek | openai | openrouter | ollama | anthropic | custom
+  api_key: "sk-xxx"          # your API key
+  model: "deepseek-chat"     # model name for chat completions
+  base_url: ""               # only needed when provider is "custom"
+  timeout: 10                # seconds
+
+# Optional: operations that ALWAYS ask user (skip AI review)
+# dangerous:
+#   - git push --force
+#   - rm -rf /
