@@ -6,7 +6,7 @@ Think of it as the open-source alternative to Claude Code's **auto mode** — se
 
 ## Why
 
-Claude Code's built-in auto mode is great, but it requires Anthropic API + Sonnet 4.6. If you use a third-party API proxy or different models, you can't enable it. Existing open-source tools like nah are powerful but require extensive configuration: 42 action types, YAML policies, path whitelists, command classification tables...
+Claude Code's built-in auto mode is great, but it requires Anthropic API + Sonnet 4.6. If you use a third-party API proxy or different models, you can't enable it. Existing open-source permission tools require extensive manual configuration: custom action types, YAML policies, path whitelists, command rules...
 
 `automodel-for-cc` takes the opposite approach: **sensible defaults, zero config beyond your LLM API key.**
 
@@ -118,21 +118,9 @@ Claude Code 执行工具前
 
 **推理盲（reasoning-blind）**：审核模型只看你的消息和待执行命令，不看 assistant 的推理过程。agent 没法用"这个操作很安全"之类的话术说服审核模型。
 
-## 与 nah 的对比
-
-| | automodel-for-cc | nah |
-|---|---|---|
-| 部署 | 一个 exe + 3 行 yaml | pip install + 配 hook + 50+ 行 config |
-| 设计哲学 | 内置安全基线，开箱即用 | 框架，需手动配置所有规则 |
-| 依赖 | 单文件，零运行时依赖 | Python + pip 包 |
-| 项目检测 | git → CLAUDE.md → package.json → CWD | 仅 git（无 git 则全算项目外） |
-| 编码问题 | Go 原生 UTF-8 | Windows GBK 需手动修 |
-| 审核上下文 | reasoning-blind | 全量 transcript |
-| 第 1-2 层延迟 | <1ms | ~50ms |
-
 ## 为什么用 Go
 
-Python（nah）在 Windows 上踩过的坑：GBK 编码崩溃、SSL 证书信任、pip 安装依赖链、启动慢。Go 编译成单个 exe，零运行时依赖，原生 UTF-8，系统证书自动信任，启动时间可忽略。
+单 exe，零运行时依赖。原生 UTF-8 不乱码，系统证书不报 SSL 错，10ms 启动，不受 Python 环境折腾。
 
 ## 配置示例
 
