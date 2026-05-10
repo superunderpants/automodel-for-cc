@@ -105,6 +105,25 @@ Restart Claude Code.
 | Anthropic | `"anthropic"` |
 | Custom (any OpenAI-compatible) | `"custom"` + `base_url` |
 
+## Uninstall
+
+Remove the binary and the hook entry from `~/.claude/settings.json`:
+
+**Windows:**
+```powershell
+rm -r $env:APPDATA\auto-guard
+# Then manually delete the "PreToolUse" entry referencing automodel-for-cc
+# from ~/.claude/settings.json
+```
+
+**macOS / Linux:**
+```bash
+rm ~/.local/bin/automodel-for-cc
+rm -rf ~/.config/auto-guard
+# Then manually delete the "PreToolUse" entry referencing automodel-for-cc
+# from ~/.claude/settings.json
+```
+
 ## Build from source
 
 ```bash
@@ -233,3 +252,20 @@ dangerous:
 支持的 provider：`deepseek` | `openai` | `openrouter` | `ollama` | `anthropic` | `custom`
 
 选 `custom` 时才需要手动填 `base_url`。
+
+## 卸载
+
+删除二进制文件和 `~/.claude/settings.json` 中的 hook 配置即可：
+
+**Windows:**
+```powershell
+rm -r $env:APPDATA\auto-guard
+# 然后手动删除 ~/.claude/settings.json 中引用 automodel-for-cc 的 PreToolUse 条目
+```
+
+**macOS / Linux:**
+```bash
+rm ~/.local/bin/automodel-for-cc
+rm -rf ~/.config/auto-guard
+# 然后手动删除 ~/.claude/settings.json 中引用 automodel-for-cc 的 PreToolUse 条目
+```
