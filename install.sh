@@ -34,7 +34,7 @@ base_url="${base_url:-https://api.deepseek.com/anthropic}"
 
 read -rp "API Key: " api_key
 
-read -rp "Model [deepseek-chat]: " model
+read -rp "Model: " model
 model="${model:-deepseek-chat}"
 
 # Write config.yaml

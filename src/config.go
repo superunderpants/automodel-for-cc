@@ -22,7 +22,7 @@ type LLMConfig struct {
 
 func (c *LLMConfig) ResolveTimeout() time.Duration {
 	if c.Timeout <= 0 {
-		return 10 * time.Second
+		return 30 * time.Second
 	}
 	return time.Duration(c.Timeout) * time.Second
 }
@@ -49,6 +49,9 @@ func LoadConfig() (*Config, error) {
 	// Env overrides
 	if v := os.Getenv("AUTO_GUARD_BASE_URL"); v != "" {
 		cfg.LLM.BaseURL = v
+	}
+	if v := os.Getenv("ANTHROPIC_MODEL"); v != "" {
+		cfg.LLM.Model = v
 	}
 	if v := os.Getenv("AUTO_GUARD_MODEL"); v != "" {
 		cfg.LLM.Model = v

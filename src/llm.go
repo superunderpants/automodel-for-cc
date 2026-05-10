@@ -43,7 +43,7 @@ func callLLM(cfg *LLMConfig, systemPrompt, userPrompt string) (*LLMDecision, err
 		Messages: []AnthropicMessage{
 			{Role: "user", Content: userPrompt},
 		},
-		MaxTokens: 512,
+		MaxTokens: 1024,
 	}
 
 	raw, err := json.Marshal(body)
@@ -70,21 +70,48 @@ func callLLM(cfg *LLMConfig, systemPrompt, userPrompt string) (*LLMDecision, err
 		return nil, fmt.Errorf("llm returned %d", resp.StatusCode)
 	}
 
-	var llmResp AnthropicResponse
-	if err := json.NewDecoder(resp.Body).Decode(&llmResp); err != nil {
+	var rawResp map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&rawResp); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 
-	if len(llmResp.Content) == 0 {
-		return nil, fmt.Errorf("empty response")
+	var textContent string
+	if contentBlocks, ok := rawResp["content"].([]interface{}); ok {
+		for _, block := range contentBlocks {
+			if b, ok := block.(map[string]interface{}); ok {
+				if txt, _ := b["text"].(string); txt != "" {
+					textContent = txt
+					break
+				}
+			}
+		}
 	}
 
-	content := llmResp.Content[0].Text
-	content = extractJSON(content)
+	// Text block not found — some thinking models only produce thinking blocks.
+	// Fall back to extracting JSON from the thinking content.
+	if textContent == "" {
+		if contentBlocks, ok := rawResp["content"].([]interface{}); ok {
+			for _, block := range contentBlocks {
+				if b, ok := block.(map[string]interface{}); ok {
+					if think, _ := b["thinking"].(string); think != "" {
+						textContent = extractJSON(think)
+						if textContent != "" {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if textContent == "" {
+		return nil, fmt.Errorf("no text content in response")
+	}
+
+	textContent = extractJSON(textContent)
 
 	var dec LLMDecision
-	if err := json.Unmarshal([]byte(content), &dec); err != nil {
-		return nil, fmt.Errorf("parse decision: %w (got: %s)", err, content[:min(200, len(content))])
+	if err := json.Unmarshal([]byte(textContent), &dec); err != nil {
+		return nil, fmt.Errorf("parse decision: %w (got: %s)", err, textContent[:min(200, len(textContent))])
 	}
 	return &dec, nil
 }
