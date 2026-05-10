@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # automodel-for-cc installer (macOS / Linux)
-# Run: curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.sh | bash
+# Run: curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.sh | bash
 set -euo pipefail
 
 REPO="superunderpants/automodel-for-cc"

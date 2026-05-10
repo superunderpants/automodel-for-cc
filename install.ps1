@@ -1,5 +1,5 @@
 # automodel-for-cc Windows installer
-# Run: irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.ps1 | iex
+# Run: irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.ps1 | iex
 param([string]$ApiKey)
 
 $ErrorActionPreference = "Stop"
