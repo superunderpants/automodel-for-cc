@@ -77,7 +77,7 @@ if (-not $found) {
 }
 
 # Write back
-$settings | ConvertTo-Json -Depth 4 | Set-Content $settingsPath
+$settings | ConvertTo-Json -Depth 6 | Set-Content $settingsPath
 Write-Host "       -> Hook added to $settingsPath"
 
 Write-Host ""
