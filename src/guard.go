@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -41,6 +40,9 @@ func readUserMessages(transcriptPath string) string {
 		if trimmed == "" {
 			continue
 		}
+		if strings.Contains(trimmed, `"type":"tool_result"`) {
+			continue
+		}
 		if strings.Contains(trimmed, `"role":"user"`) ||
 			strings.Contains(trimmed, `"role": "user"`) ||
 			strings.HasPrefix(trimmed, "user:") ||
@@ -60,6 +62,9 @@ func readUserMessages(transcriptPath string) string {
 // ---- main classification logic ----
 
 func classify(req *HookRequest) *Decision {
+	unlock := logBlock()
+	defer unlock()
+
 	toolName := req.CanonicalTool()
 	cmd := req.ToolInput.Command()
 	filePath := req.ToolInput.FilePath()
@@ -187,7 +192,7 @@ func extractBashTarget(cmd string) string {
 		if f == "" || strings.HasPrefix(f, "-") {
 			continue
 		}
-		if strings.Contains(f, string(filepath.Separator)) || strings.HasSuffix(f, ".tex") || strings.HasSuffix(f, ".txt") {
+		if hasPathSep(f) || strings.HasSuffix(f, ".tex") || strings.HasSuffix(f, ".txt") {
 			return f
 		}
 	}
