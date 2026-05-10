@@ -52,10 +52,10 @@ if (Test-Path $settingsPath) {
 }
 
 if (-not $settings.hooks) {
-    $settings | Add-Member -MemberType NoteProperty -Name hooks -Value ([pscustomobject]@{})
+    $settings | Add-Member -Force -MemberType NoteProperty -Name hooks -Value ([pscustomobject]@{})
 }
 if (-not $settings.hooks.PreToolUse) {
-    $settings.hooks | Add-Member -MemberType NoteProperty -Name PreToolUse -Value @()
+    $settings.hooks | Add-Member -Force -MemberType NoteProperty -Name PreToolUse -Value @()
 }
 
 $newEntry = [pscustomobject]@{
