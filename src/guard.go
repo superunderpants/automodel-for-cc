@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// ---- output types ----
+// ---- output types (Claude Code PreToolUse hook protocol) ----
 
 const (
 	DecisionAllow = "allow"
@@ -16,13 +16,6 @@ const (
 )
 
 type Decision struct {
-	Decision           string      `json:"decision"`
-	Reason             string      `json:"reason"`
-	SystemMessage      string      `json:"systemMessage,omitempty"`
-	HookSpecificOutput *HookOutput `json:"hookSpecificOutput"`
-}
-
-type HookOutput struct {
 	HookEventName            string `json:"hookEventName"`
 	PermissionDecision       string `json:"permissionDecision"`
 	PermissionDecisionReason string `json:"permissionDecisionReason,omitempty"`
@@ -156,12 +149,9 @@ func classify(req *HookRequest) *Decision {
 	logKV("reasoning", dec.Reasoning)
 
 	if dec.Decision == DecisionAllow {
-		result := allowDecision("AI: " + dec.Reasoning)
-		result.SystemMessage = "auto-guard: " + dec.Reasoning
-		return result
+		return allowDecision(dec.Reasoning)
 	}
-
-	return askDecision("AI: " + dec.Reasoning)
+	return askDecision(dec.Reasoning)
 }
 
 // ---- tier helpers ----
@@ -208,23 +198,15 @@ func extractBashTarget(cmd string) string {
 
 func allowDecision(reason string) *Decision {
 	return &Decision{
-		Decision: DecisionAllow,
-		Reason:   reason,
-		HookSpecificOutput: &HookOutput{
-			HookEventName:      "PreToolUse",
-			PermissionDecision: "allow",
-		},
+		HookEventName:      "PreToolUse",
+		PermissionDecision: "allow",
 	}
 }
 
 func askDecision(reason string) *Decision {
 	return &Decision{
-		Decision: DecisionAsk,
-		Reason:   reason,
-		HookSpecificOutput: &HookOutput{
-			HookEventName:            "PreToolUse",
-			PermissionDecision:       "ask",
-			PermissionDecisionReason: reason,
-		},
+		HookEventName:            "PreToolUse",
+		PermissionDecision:       "ask",
+		PermissionDecisionReason: reason,
 	}
 }
