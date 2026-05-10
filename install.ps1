@@ -49,20 +49,19 @@ if (-not $providers.ContainsKey($choice) -or $choice -eq "0") {
 
 Write-Host "       -> Provider: $provider"
 
-if ($choice -eq "5") {
-    Write-Host "       -> Ollama doesn't need an API key (local)"
-} elseif ($choice -eq "6") {
-    $baseUrl = Read-Host "Enter base URL"
-    [Environment]::SetEnvironmentVariable("AUTO_GUARD_BASE_URL", $baseUrl, "User")
-    $apiKey = Read-Host "Enter API key (or press Enter to skip)"
-    if ($apiKey) {
-        [Environment]::SetEnvironmentVariable("AUTO_GUARD_API_KEY", $apiKey, "User")
+if ($choice -ne "5") {
+    # Base URL (optional — press Enter to use default)
+    $baseUrl = Read-Host "Base URL (press Enter for default)"
+    if ($baseUrl) {
+        [Environment]::SetEnvironmentVariable("AUTO_GUARD_BASE_URL", $baseUrl, "User")
     }
-} else {
-    $apiKey = Read-Host "Enter API key (or press Enter to skip)"
+
+    $apiKey = Read-Host "API key (press Enter to skip)"
     if ($apiKey) {
         [Environment]::SetEnvironmentVariable($envKey, $apiKey, "User")
     }
+} else {
+    Write-Host "       -> Ollama doesn't need an API key (local)"
 }
 
 if ($provider -ne "deepseek") {

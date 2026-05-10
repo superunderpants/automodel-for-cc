@@ -50,20 +50,18 @@ esac
 
 echo "       -> Provider: $provider"
 
-if [ "$choice" = "5" ]; then
-  echo "       -> Ollama doesn't need an API key (local)"
-elif [ "$choice" = "6" ]; then
-  read -rp "Enter base URL: " base_url
-  echo "export AUTO_GUARD_BASE_URL=\"$base_url\"" >> "${HOME}/.bashrc"
-  read -rp "Enter API key (or press Enter to skip): " key
-  if [ -n "$key" ]; then
-    echo "export AUTO_GUARD_API_KEY=\"$key\"" >> "${HOME}/.bashrc"
+if [ "$choice" != "5" ]; then
+  read -rp "Base URL (press Enter for default): " base_url
+  if [ -n "$base_url" ]; then
+    echo "export AUTO_GUARD_BASE_URL=\"$base_url\"" >> "${HOME}/.bashrc"
   fi
-else
-  read -rp "Enter API key (or press Enter to skip): " key
+
+  read -rp "API key (press Enter to skip): " key
   if [ -n "$key" ]; then
     echo "export ${env_key}=\"$key\"" >> "${HOME}/.bashrc"
   fi
+else
+  echo "       -> Ollama doesn't need an API key (local)"
 fi
 
 if [ "$provider" != "deepseek" ]; then
