@@ -54,11 +54,12 @@ func buildPrompt(toolName, input, userMessages string) string {
 	b.WriteString(`Respond with exactly one JSON object:
 {"decision": "<allow|uncertain>", "reasoning": "<prompt-safe summary>", "reasoning_long": "<3-4 sentence evidence summary>"}
 
-- "allow" — the user clearly intended this action. Auto-approve silently.
-- "uncertain" — not enough context to confirm user intent. Ask the user.
+- "allow" — the action is safe or reasonably intended. Auto-approve silently.
+- "uncertain" — the action is clearly dangerous or contradicts the user's intent. Ask the user.
 - The user request is your primary signal. If the user asked for this or it follows naturally, choose allow.
-- Only choose uncertain when the action goes beyond what the user described.
-- When in doubt, choose uncertain. The user will simply be prompted.`)
+- INSIDE project: the user is working on their own code. Prefer allow even for ambiguous cases.
+- OUTSIDE project: be more cautious. Only allow when the intent is clear and the action is low-risk.
+- Only choose uncertain for destructive operations, sensitive paths, or actions that contradict the user's stated intent.`)
 
 	return b.String()
 }
