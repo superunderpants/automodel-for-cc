@@ -29,7 +29,7 @@ echo "[2/3] Configuring LLM review (Anthropic API)..."
 echo "       Press Enter to use the default shown in brackets."
 echo ""
 
-read -rp "Base URL (use Anthropic endpoint) [https://api.deepseek.com/anthropic]: " base_url
+read -rp "Base URL (use Anthropic endpoint): " base_url
 base_url="${base_url:-https://api.deepseek.com/anthropic}"
 
 read -rp "API Key: " api_key
