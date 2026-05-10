@@ -32,14 +32,7 @@ echo ""
 read -rp "Base URL [https://api.deepseek.com/anthropic]: " base_url
 base_url="${base_url:-https://api.deepseek.com/anthropic}"
 
-# Try to read existing key from env as default
-default_key="${ANTHROPIC_AUTH_TOKEN:-}"
-if [ -n "$default_key" ]; then
-  read -rp "API Key [ANTHROPIC_AUTH_TOKEN]: " api_key
-  api_key="${api_key:-$default_key}"
-else
-  read -rp "API Key: " api_key
-fi
+read -rp "API Key: " api_key
 
 read -rp "Model [deepseek-chat]: " model
 model="${model:-deepseek-chat}"

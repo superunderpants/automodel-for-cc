@@ -26,12 +26,7 @@ Write-Host ""
 $baseUrl = Read-Host "Base URL [https://api.deepseek.com/anthropic]"
 if (-not $baseUrl) { $baseUrl = "https://api.deepseek.com/anthropic" }
 
-# Try to read existing key from env as default
-$defaultKey = [Environment]::GetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN", "User")
-if (-not $defaultKey) { $defaultKey = "" }
-$keyPrompt = if ($defaultKey) { "API Key [ANTHROPIC_AUTH_TOKEN]" } else { "API Key" }
-$apiKey = Read-Host $keyPrompt
-if (-not $apiKey -and $defaultKey) { $apiKey = $defaultKey }
+$apiKey = Read-Host "API Key"
 
 $model = Read-Host "Model [deepseek-chat]"
 if (-not $model) { $model = "deepseek-chat" }
