@@ -18,7 +18,7 @@ $url = "https://github.com/$repo/releases/latest/download/$binName"
 Invoke-WebRequest -Uri $url -OutFile $binaryPath -UseBasicParsing
 Write-Host "       -> $binaryPath"
 
-# 2. LLM config — 3 fields, same as configuring Claude Code
+# 2. LLM config — same 3 fields as Claude Code
 Write-Host "[2/3] Configuring LLM review (Anthropic API)..."
 Write-Host "       Press Enter to use the default shown in brackets."
 Write-Host ""
@@ -28,7 +28,7 @@ if (-not $baseUrl) { $baseUrl = "https://api.deepseek.com/anthropic" }
 
 $apiKey = Read-Host "API Key"
 
-$model = Read-Host "Model [deepseek-chat]"
+$model = Read-Host "Model"
 if (-not $model) { $model = "deepseek-chat" }
 
 # Write config.yaml
