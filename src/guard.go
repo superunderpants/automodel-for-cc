@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,16 +16,16 @@ const (
 )
 
 type Decision struct {
-	Decision              string `json:"decision"`
-	Reason                string `json:"reason"`
-	SystemMessage         string `json:"systemMessage,omitempty"`
-	HookSpecificOutput    *HookOutput `json:"hookSpecificOutput"`
+	Decision           string      `json:"decision"`
+	Reason             string      `json:"reason"`
+	SystemMessage      string      `json:"systemMessage,omitempty"`
+	HookSpecificOutput *HookOutput `json:"hookSpecificOutput"`
 }
 
 type HookOutput struct {
-	HookEventName             string `json:"hookEventName"`
-	PermissionDecision        string `json:"permissionDecision"`
-	PermissionDecisionReason  string `json:"permissionDecisionReason,omitempty"`
+	HookEventName            string `json:"hookEventName"`
+	PermissionDecision       string `json:"permissionDecision"`
+	PermissionDecisionReason string `json:"permissionDecisionReason,omitempty"`
 }
 
 // ---- transcript reading ----
@@ -39,19 +39,15 @@ func readUserMessages(transcriptPath string) string {
 		return ""
 	}
 	text := string(data)
-	// Take tail for context window
 	if len(text) > 4000 {
 		text = text[len(text)-4000:]
 	}
-	// Extract user messages only (reasoning-blind)
-	// Simple heuristic: lines with "user:" prefix or user role
 	var lines []string
 	for _, line := range strings.Split(text, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			continue
 		}
-		// Keep lines with clear user attribution
 		if strings.Contains(trimmed, `"role":"user"`) ||
 			strings.Contains(trimmed, `"role": "user"`) ||
 			strings.HasPrefix(trimmed, "user:") ||
@@ -60,7 +56,6 @@ func readUserMessages(transcriptPath string) string {
 		}
 	}
 	if len(lines) == 0 {
-		// Fallback: take raw tail
 		if len(text) > 2000 {
 			text = text[len(text)-2000:]
 		}
@@ -73,21 +68,45 @@ func readUserMessages(transcriptPath string) string {
 
 func classify(req *HookRequest) *Decision {
 	toolName := req.CanonicalTool()
+	cmd := req.ToolInput.Command()
+	filePath := req.ToolInput.FilePath()
+
+	logDivider()
+	logSection("INCOMING")
+	logKV("tool", toolName)
+	if cmd != "" {
+		logKV("command", cmd)
+	}
+	if filePath != "" {
+		logKV("file", filePath)
+	}
+	if req.TranscriptPath != "" {
+		logKV("transcript", req.TranscriptPath)
+	}
 
 	// Tier 1: always-allow tools
 	if tier1Tools[toolName] {
+		logSection("RESULT - TIER 1")
+		logKV("decision", "allow")
+		logKV("reason", "safe read-only tool")
 		return allowDecision("tier 1: safe read-only tool")
 	}
 
 	// Tier 1: Bash with read-only patterns
 	if toolName == "Bash" {
-		if isReadOnlyBash(req.ToolInput.Command()) {
+		if isReadOnlyBash(cmd) {
+			logSection("RESULT - TIER 1")
+			logKV("decision", "allow")
+			logKV("reason", "read-only bash command")
 			return allowDecision("tier 1: read-only bash command")
 		}
 		// Tier 2: Bash safe writes inside project
-		if isTier2Bash(req.ToolInput.Command()) {
-			target := extractBashTarget(req.ToolInput.Command())
+		if isTier2Bash(cmd) {
+			target := extractBashTarget(cmd)
 			if target != "" && isInsideProject(target) {
+				logSection("RESULT - TIER 2")
+				logKV("decision", "allow")
+				logKV("reason", "safe bash write inside project")
 				return allowDecision("tier 2: safe bash write inside project")
 			}
 		}
@@ -95,32 +114,46 @@ func classify(req *HookRequest) *Decision {
 
 	// Tier 2: Write/Edit inside project
 	if tier2Tools[toolName] {
-		filePath := req.ToolInput.FilePath()
 		if filePath != "" && isInsideProject(filePath) {
+			logSection("RESULT - TIER 2")
+			logKV("decision", "allow")
+			logKV("reason", "safe edit inside project")
 			return allowDecision("tier 2: safe edit inside project")
 		}
 	}
 
 	// Tier 3: LLM review
+	logSection("TIER 3 - LLM REVIEW")
+	logKV("status", "loading config...")
+
 	cfg, err := LoadConfig()
 	if err != nil {
-		log.Printf("auto-guard: config error: %v", err)
+		logKV("error", err.Error())
 		return askDecision("config error, asking user")
 	}
+
+	logKV("provider", cfg.LLM.Provider)
+	logKV("model", cfg.LLM.Model)
 
 	userMsgs := readUserMessages(req.TranscriptPath)
 	prompt := buildPrompt(toolName, req.ToolInput.RawString(), userMsgs)
 
+	logKV("context", userMsgs)
+	logKV("question", prompt)
+
 	t0 := time.Now()
+	logKV("status", "calling LLM...")
 	dec, err := callLLM(&cfg.LLM, systemTemplate, prompt)
-	elapsed := time.Since(t0)
 
 	if err != nil {
-		log.Printf("auto-guard: LLM error: %v (%.1fs)", err, elapsed.Seconds())
+		logKV("error", fmt.Sprintf("%v (elapsed: %s)", err, elapsedLog(t0)))
 		return askDecision("LLM review unavailable, asking user")
 	}
 
-	log.Printf("auto-guard: LLM review %s in %v → %s", toolName, elapsed, dec.Decision)
+	logSection("LLM RESPONSE")
+	logKV("elapsed", elapsedLog(t0))
+	logKV("decision", dec.Decision)
+	logKV("reasoning", dec.Reasoning)
 
 	if dec.Decision == DecisionAllow {
 		result := allowDecision("AI: " + dec.Reasoning)
@@ -158,7 +191,6 @@ func isTier2Bash(cmd string) bool {
 }
 
 func extractBashTarget(cmd string) string {
-	// Simple extraction: last argument that looks like a path
 	fields := strings.Fields(cmd)
 	for i := len(fields) - 1; i >= 0; i-- {
 		f := fields[i]
@@ -190,9 +222,9 @@ func askDecision(reason string) *Decision {
 		Decision: DecisionAsk,
 		Reason:   reason,
 		HookSpecificOutput: &HookOutput{
-			HookEventName:             "PreToolUse",
-			PermissionDecision:        "ask",
-			PermissionDecisionReason:  reason,
+			HookEventName:            "PreToolUse",
+			PermissionDecision:       "ask",
+			PermissionDecisionReason: reason,
 		},
 	}
 }
