@@ -6,6 +6,7 @@ $repo = "superunderpants/automodel-for-cc"
 $binName = "automodel-for-cc-windows-amd64.exe"
 $installDir = "$env:APPDATA\auto-guard"
 $binaryPath = "$installDir\automodel-for-cc.exe"
+$configPath = "$installDir\config.yaml"
 $settingsPath = "$env:USERPROFILE\.claude\settings.json"
 
 Write-Host "=== automodel-for-cc installer ==="
@@ -17,71 +18,44 @@ $url = "https://github.com/$repo/releases/latest/download/$binName"
 Invoke-WebRequest -Uri $url -OutFile $binaryPath -UseBasicParsing
 Write-Host "       -> $binaryPath"
 
-# 2. Provider & API key
-Write-Host "[2/3] Configuring LLM provider..."
-Write-Host ""
-Write-Host "  [1] DeepSeek"
-Write-Host "  [2] OpenAI"
-Write-Host "  [3] Anthropic"
-Write-Host "  [4] OpenRouter"
-Write-Host "  [5] Ollama (local, no API key needed)"
-Write-Host "  [6] Custom (any OpenAI-compatible API)"
+# 2. LLM config — 3 fields, same as configuring Claude Code
+Write-Host "[2/3] Configuring LLM review (Anthropic API)..."
+Write-Host "       Press Enter to use the default shown in brackets."
 Write-Host ""
 
-$providers = @{
-    "1" = @{name="deepseek";  env="DEEPSEEK_API_KEY"}
-    "2" = @{name="openai";    env="OPENAI_API_KEY"}
-    "3" = @{name="anthropic"; env="ANTHROPIC_API_KEY"}
-    "4" = @{name="openrouter"; env="OPENROUTER_API_KEY"}
-    "5" = @{name="ollama";    env=""}
-    "6" = @{name="custom";    env="AUTO_GUARD_API_KEY"}
-}
+$baseUrl = Read-Host "Base URL [https://api.deepseek.com/anthropic]"
+if (-not $baseUrl) { $baseUrl = "https://api.deepseek.com/anthropic" }
 
-$choice = Read-Host "Choose provider [1-6]"
-if (-not $providers.ContainsKey($choice) -or $choice -eq "0") {
-    Write-Host "       -> Skipping, defaulting to DeepSeek"
-    $provider = "deepseek"
-    $envKey = "DEEPSEEK_API_KEY"
-} else {
-    $provider = $providers[$choice].name
-    $envKey = $providers[$choice].env
-}
+# Try to read existing key from env as default
+$defaultKey = [Environment]::GetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN", "User")
+if (-not $defaultKey) { $defaultKey = "" }
+$keyPrompt = if ($defaultKey) { "API Key [ANTHROPIC_AUTH_TOKEN]" } else { "API Key" }
+$apiKey = Read-Host $keyPrompt
+if (-not $apiKey -and $defaultKey) { $apiKey = $defaultKey }
 
-Write-Host "       -> Provider: $provider"
+$model = Read-Host "Model [deepseek-chat]"
+if (-not $model) { $model = "deepseek-chat" }
 
-if ($choice -ne "5") {
-    # Base URL (optional — press Enter to use default)
-    $baseUrl = Read-Host "Base URL (press Enter for default)"
-    if ($baseUrl) {
-        [Environment]::SetEnvironmentVariable("AUTO_GUARD_BASE_URL", $baseUrl, "User")
-    }
-
-    $apiKey = Read-Host "API key (press Enter to skip)"
-    if ($apiKey) {
-        [Environment]::SetEnvironmentVariable($envKey, $apiKey, "User")
-    }
-} else {
-    Write-Host "       -> Ollama doesn't need an API key (local)"
-}
-
-if ($provider -ne "deepseek") {
-    [Environment]::SetEnvironmentVariable("AUTO_GUARD_PROVIDER", $provider, "User")
-}
-
-Write-Host "       -> Done (restart terminal to take effect)"
+# Write config.yaml
+@"
+# automodel-for-cc config — same 3 fields as Claude Code
+llm:
+  base_url: "$baseUrl"
+  api_key: "$apiKey"
+  model: "$model"
+"@ | Set-Content $configPath -Encoding UTF8
+Write-Host "       -> $configPath"
 
 # 3. Hook
 Write-Host "[3/3] Setting up Claude Code hook..."
 $escapedPath = $binaryPath -replace '\\', '/'
 
-# Read or create settings
 if (Test-Path $settingsPath) {
     $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
 } else {
     $settings = [pscustomobject]@{}
 }
 
-# Ensure hooks.PreToolUse exists
 if (-not $settings.hooks) {
     $settings | Add-Member -MemberType NoteProperty -Name hooks -Value ([pscustomobject]@{})
 }
@@ -89,7 +63,6 @@ if (-not $settings.hooks.PreToolUse) {
     $settings.hooks | Add-Member -MemberType NoteProperty -Name PreToolUse -Value @()
 }
 
-# Replace existing auto-guard entry or add new one
 $newEntry = [pscustomobject]@{
     matcher = ".*"
     hooks   = @(
@@ -113,10 +86,9 @@ if (-not $found) {
     $settings.hooks.PreToolUse += $newEntry
 }
 
-# Write back
 $settings | ConvertTo-Json -Depth 6 | Set-Content $settingsPath
 Write-Host "       -> Hook added to $settingsPath"
 
 Write-Host ""
 Write-Host "Done! Restart Claude Code and you're all set."
-Write-Host "To verify: type anything in Claude Code — you should see fewer permission prompts."
+Write-Host "Logs: $installDir\guard.log"

@@ -11,6 +11,8 @@ ARCH=$(uname -m)
 BIN_NAME="automodel-for-cc-${OS}-${ARCH}"
 INSTALL_DIR="${HOME}/.local/bin"
 BINARY_PATH="${INSTALL_DIR}/automodel-for-cc"
+CONFIG_DIR="${HOME}/.config/auto-guard"
+CONFIG_PATH="${CONFIG_DIR}/config.yaml"
 SETTINGS_PATH="${HOME}/.claude/settings.json"
 
 echo "=== automodel-for-cc installer ==="
@@ -22,65 +24,46 @@ curl -fsSL -o "$BINARY_PATH" "https://github.com/${REPO}/releases/latest/downloa
 chmod +x "$BINARY_PATH"
 echo "       -> $BINARY_PATH"
 
-# 2. Provider & API key
-echo "[2/3] Configuring LLM provider..."
-echo ""
-echo "  [1] DeepSeek"
-echo "  [2] OpenAI"
-echo "  [3] Anthropic"
-echo "  [4] OpenRouter"
-echo "  [5] Ollama (local, no API key needed)"
-echo "  [6] Custom (any OpenAI-compatible API)"
+# 2. LLM config — 3 fields, same as configuring Claude Code
+echo "[2/3] Configuring LLM review (Anthropic API)..."
+echo "       Press Enter to use the default shown in brackets."
 echo ""
 
-read -rp "Choose provider [1-6]: " choice
-choice="${choice:-0}"
+read -rp "Base URL [https://api.deepseek.com/anthropic]: " base_url
+base_url="${base_url:-https://api.deepseek.com/anthropic}"
 
-provider=""
-env_key=""
-case "$choice" in
-  1) provider="deepseek";   env_key="DEEPSEEK_API_KEY" ;;
-  2) provider="openai";     env_key="OPENAI_API_KEY" ;;
-  3) provider="anthropic";  env_key="ANTHROPIC_API_KEY" ;;
-  4) provider="openrouter"; env_key="OPENROUTER_API_KEY" ;;
-  5) provider="ollama";     env_key="" ;;
-  6) provider="custom";     env_key="AUTO_GUARD_API_KEY" ;;
-  *) provider="deepseek";   env_key="DEEPSEEK_API_KEY" ;;
-esac
-
-echo "       -> Provider: $provider"
-
-if [ "$choice" != "5" ]; then
-  read -rp "Base URL (press Enter for default): " base_url
-  if [ -n "$base_url" ]; then
-    echo "export AUTO_GUARD_BASE_URL=\"$base_url\"" >> "${HOME}/.bashrc"
-  fi
-
-  read -rp "API key (press Enter to skip): " key
-  if [ -n "$key" ]; then
-    echo "export ${env_key}=\"$key\"" >> "${HOME}/.bashrc"
-  fi
+# Try to read existing key from env as default
+default_key="${ANTHROPIC_AUTH_TOKEN:-}"
+if [ -n "$default_key" ]; then
+  read -rp "API Key [ANTHROPIC_AUTH_TOKEN]: " api_key
+  api_key="${api_key:-$default_key}"
 else
-  echo "       -> Ollama doesn't need an API key (local)"
+  read -rp "API Key: " api_key
 fi
 
-if [ "$provider" != "deepseek" ]; then
-  echo "export AUTO_GUARD_PROVIDER=\"$provider\"" >> "${HOME}/.bashrc"
-fi
+read -rp "Model [deepseek-chat]: " model
+model="${model:-deepseek-chat}"
 
-echo "       -> Added to ~/.bashrc (source ~/.bashrc or restart terminal)"
+# Write config.yaml
+mkdir -p "$CONFIG_DIR"
+cat > "$CONFIG_PATH" << YAMLEOF
+# automodel-for-cc config — same 3 fields as Claude Code
+llm:
+  base_url: "${base_url}"
+  api_key: "${api_key}"
+  model: "${model}"
+YAMLEOF
+echo "       -> $CONFIG_PATH"
 
 # 3. Hook
 echo "[3/3] Setting up Claude Code hook..."
 
-# Read or create settings.json
 if [ -f "$SETTINGS_PATH" ]; then
     SETTINGS=$(cat "$SETTINGS_PATH")
 else
     SETTINGS='{}'
 fi
 
-# Merge hook using Python (available on most systems) or node, or fall back to manual
 add_hook() {
     python3 -c "
 import json, sys
@@ -90,7 +73,6 @@ hook = {
     'matcher': '.*',
     'hooks': [{'type': 'command', 'command': '$BINARY_PATH'}]
 }
-# Replace existing auto-guard entry or append if not found
 pretool = settings['hooks']['PreToolUse']
 replaced = False
 for i, entry in enumerate(pretool):
@@ -124,4 +106,4 @@ fi
 
 echo ""
 echo "Done! Restart Claude Code and you're all set."
-echo "To verify: type anything in Claude Code — you should see fewer permission prompts."
+echo "Logs: ${CONFIG_DIR}/guard.log"

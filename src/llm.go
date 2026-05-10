@@ -5,46 +5,45 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
-// ---- LLM types ----
-
-type LLMRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
+type AnthropicRequest struct {
+	Model    string              `json:"model"`
+	System   string              `json:"system"`
+	Messages []AnthropicMessage  `json:"messages"`
+	MaxTokens int                `json:"max_tokens"`
 }
 
-type Message struct {
+type AnthropicMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
-type LLMResponse struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
+type AnthropicResponse struct {
+	Content []struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	} `json:"content"`
 }
 
 type LLMDecision struct {
-	Decision       string `json:"decision"`
-	Reasoning      string `json:"reasoning"`
-	ReasoningLong  string `json:"reasoning_long"`
+	Decision      string `json:"decision"`
+	Reasoning     string `json:"reasoning"`
+	ReasoningLong string `json:"reasoning_long"`
 }
 
-// ---- LLM call ----
-
 func callLLM(cfg *LLMConfig, systemPrompt, userPrompt string) (*LLMDecision, error) {
-	url := cfg.ResolveBaseURL()
+	url := strings.TrimRight(cfg.BaseURL, "/") + "/messages"
 	timeout := cfg.ResolveTimeout()
 
-	body := LLMRequest{
-		Model: cfg.Model,
-		Messages: []Message{
-			{Role: "system", Content: systemPrompt},
+	body := AnthropicRequest{
+		Model:    cfg.Model,
+		System:   systemPrompt,
+		Messages: []AnthropicMessage{
 			{Role: "user", Content: userPrompt},
 		},
+		MaxTokens: 512,
 	}
 
 	raw, err := json.Marshal(body)
@@ -58,7 +57,8 @@ func callLLM(cfg *LLMConfig, systemPrompt, userPrompt string) (*LLMDecision, err
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+	req.Header.Set("x-api-key", cfg.APIKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -70,28 +70,26 @@ func callLLM(cfg *LLMConfig, systemPrompt, userPrompt string) (*LLMDecision, err
 		return nil, fmt.Errorf("llm returned %d", resp.StatusCode)
 	}
 
-	var llmResp LLMResponse
+	var llmResp AnthropicResponse
 	if err := json.NewDecoder(resp.Body).Decode(&llmResp); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 
-	if len(llmResp.Choices) == 0 {
+	if len(llmResp.Content) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
 
-	content := llmResp.Choices[0].Message.Content
-	// extract JSON from response (may have markdown wrapping)
+	content := llmResp.Content[0].Text
 	content = extractJSON(content)
 
 	var dec LLMDecision
 	if err := json.Unmarshal([]byte(content), &dec); err != nil {
-		return nil, fmt.Errorf("parse decision: %w (got: %s)", err, content[:200])
+		return nil, fmt.Errorf("parse decision: %w (got: %s)", err, content[:min(200, len(content))])
 	}
 	return &dec, nil
 }
 
 func extractJSON(s string) string {
-	// find first { and last }
 	start := 0
 	end := len(s)
 	for i, c := range s {
@@ -110,4 +108,11 @@ func extractJSON(s string) string {
 		return s[start:end]
 	}
 	return s
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

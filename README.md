@@ -39,7 +39,7 @@ irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/in
 curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.sh | bash
 ```
 
-One line. Downloads the binary, sets your API key, and wires up the Claude Code hook. Restart Claude Code and you're done.
+One line. Downloads the binary, asks for your API credentials (same 3 fields as Claude Code), and wires up the hook. Restart Claude Code and you're done.
 
 > **Manual install?** See [below](#manual-install).
 
@@ -60,19 +60,30 @@ curl -sL -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/aut
 chmod +x ~/.local/bin/automodel-for-cc
 ```
 
-### 2. API key
+### 2. Config
 
-Set `DEEPSEEK_API_KEY` environment variable, or create `config.yaml`:
+Create `config.yaml` — same 3 fields you used to configure Claude Code:
 
 *Windows:* `%APPDATA%\auto-guard\config.yaml`
 *macOS/Linux:* `~/.config/auto-guard/config.yaml`
 
 ```yaml
 llm:
-  provider: "deepseek"
+  base_url: "https://api.deepseek.com/anthropic"
   api_key: "sk-xxx"
   model: "deepseek-chat"
 ```
+
+Uses the Anthropic Messages API format (the same protocol Claude Code uses). Works with any provider that speaks Anthropic API: DeepSeek, SiliconFlow, OpenRouter, Anthropic, or your own proxy.
+
+Alternatively, set environment variables:
+```bash
+export AUTO_GUARD_BASE_URL="https://api.deepseek.com/anthropic"
+export AUTO_GUARD_API_KEY="sk-xxx"
+export AUTO_GUARD_MODEL="deepseek-chat"
+```
+
+API key fallback chain: `AUTO_GUARD_API_KEY` → `ANTHROPIC_AUTH_TOKEN` → `OPENAI_API_KEY`.
 
 ### 3. Hook
 
@@ -94,16 +105,17 @@ Add to `~/.claude/settings.json`:
 
 Restart Claude Code.
 
-## Supported providers
+## Config reference
 
-| Provider | Config value |
-|----------|-------------|
-| DeepSeek | `"deepseek"` |
-| OpenAI | `"openai"` |
-| OpenRouter | `"openrouter"` |
-| Ollama (local) | `"ollama"` |
-| Anthropic | `"anthropic"` |
-| Custom (any OpenAI-compatible) | `"custom"` + `base_url` |
+```yaml
+# %APPDATA%\auto-guard\config.yaml  (Windows)
+# ~/.config/auto-guard/config.yaml   (macOS/Linux)
+llm:
+  base_url: "https://api.deepseek.com/anthropic"
+  api_key: "sk-xxx"
+  model: "deepseek-chat"
+  timeout: 10          # seconds (optional, default 10)
+```
 
 ## Uninstall
 
@@ -179,7 +191,7 @@ irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/in
 curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.sh | bash
 ```
 
-一行命令。自动下载、配置 API key、挂载 Claude Code hook。重启 Claude Code 即可生效。
+一行命令。自动下载、配置 API 信息（和 Claude Code 一样的 3 个字段）、挂载 hook。重启 Claude Code 即可生效。
 
 > 手动安装？见[下方](#手动安装)。
 
@@ -200,19 +212,30 @@ curl -sL -o ~/.local/bin/automodel-for-cc https://github.com/superunderpants/aut
 chmod +x ~/.local/bin/automodel-for-cc
 ```
 
-### 2. API key
+### 2. 配置
 
-设置环境变量 `DEEPSEEK_API_KEY`，或者创建 `config.yaml`：
+创建 `config.yaml`，和配置 Claude Code 一样的 3 个字段：
 
 *Windows:* `%APPDATA%\auto-guard\config.yaml`
 *macOS/Linux:* `~/.config/auto-guard/config.yaml`
 
 ```yaml
 llm:
-  provider: "deepseek"
+  base_url: "https://api.deepseek.com/anthropic"
   api_key: "sk-xxx"
   model: "deepseek-chat"
 ```
+
+走 Anthropic Messages API 协议（和 Claude Code 同一个协议）。支持所有兼容 Anthropic API 的服务：DeepSeek、硅基流动、OpenRouter、Anthropic 官方、自建代理等。
+
+也可以用环境变量：
+```bash
+export AUTO_GUARD_BASE_URL="https://api.deepseek.com/anthropic"
+export AUTO_GUARD_API_KEY="sk-xxx"
+export AUTO_GUARD_MODEL="deepseek-chat"
+```
+
+API key 读取顺序：`AUTO_GUARD_API_KEY` → `ANTHROPIC_AUTH_TOKEN` → `OPENAI_API_KEY`。
 
 ### 3. Hook
 
@@ -234,24 +257,17 @@ llm:
 
 重启 Claude Code。
 
-## 配置示例
+## 配置参考
 
 ```yaml
-# %APPDATA%\auto-guard\config.yaml
+# %APPDATA%\auto-guard\config.yaml  (Windows)
+# ~/.config/auto-guard/config.yaml   (macOS/Linux)
 llm:
-  provider: "deepseek"       # 内置 base_url 映射
-  api_key: "sk-xxx"          # 你的 API key
+  base_url: "https://api.deepseek.com/anthropic"
+  api_key: "sk-xxx"
   model: "deepseek-chat"
-
-# 可选：高风险命令跳过 AI 直接弹窗
-dangerous:
-  - git push --force
-  - rm -rf /
+  timeout: 10          # 秒（可选，默认 10）
 ```
-
-支持的 provider：`deepseek` | `openai` | `openrouter` | `ollama` | `anthropic` | `custom`
-
-选 `custom` 时才需要手动填 `base_url`。
 
 ## 卸载
 

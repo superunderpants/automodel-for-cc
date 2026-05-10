@@ -130,7 +130,7 @@ func classify(req *HookRequest) *Decision {
 		return askDecision("config error, asking user")
 	}
 
-	logKV("provider", cfg.LLM.Provider)
+	logKV("url", cfg.LLM.BaseURL)
 	logKV("model", cfg.LLM.Model)
 
 	userMsgs := readUserMessages(req.TranscriptPath)
