@@ -31,12 +31,12 @@ Your Claude Code session
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.ps1 | iex
 ```
 
 **macOS / Linux:**
 ```bash
-curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.sh | bash
 ```
 
 One line. Downloads the binary, sets your API key, and wires up the Claude Code hook. Restart Claude Code and you're done.
@@ -171,12 +171,12 @@ Claude Code 执行工具前
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.ps1 | iex
 ```
 
 **macOS / Linux:**
 ```bash
-curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.sh | bash
 ```
 
 一行命令。自动下载、配置 API key、挂载 Claude Code hook。重启 Claude Code 即可生效。
