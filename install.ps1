@@ -23,7 +23,7 @@ Write-Host "[2/3] Configuring LLM review (Anthropic API)..."
 Write-Host "       Press Enter to use the default shown in brackets."
 Write-Host ""
 
-$baseUrl = Read-Host "Base URL [https://api.deepseek.com/anthropic]"
+$baseUrl = Read-Host "Base URL (use Anthropic endpoint) [https://api.deepseek.com/anthropic]"
 if (-not $baseUrl) { $baseUrl = "https://api.deepseek.com/anthropic" }
 
 $apiKey = Read-Host "API Key"
