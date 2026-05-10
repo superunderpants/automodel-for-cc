@@ -36,7 +36,7 @@ jobs:
           go-version: "1.21"
       - name: Build
         run: |
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ${{ matrix.binary }} ./src/
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o ${{ matrix.binary }} ./src/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

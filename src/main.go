@@ -119,7 +119,10 @@ func main() {
 }
 
 func writeDecision(d *Decision) {
-	out, err := json.Marshal(d)
+	wrapper := map[string]interface{}{
+		"hookSpecificOutput": d,
+	}
+	out, err := json.Marshal(wrapper)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "auto-guard: marshal error: %v\n", err)
 		os.Exit(1)
