@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -31,32 +32,56 @@ func readUserMessages(transcriptPath string) string {
 		return ""
 	}
 	text := string(data)
-	if len(text) > 4000 {
-		text = text[len(text)-4000:]
+	// Only look at the tail of the transcript for recent context
+	if len(text) > 16000 {
+		text = text[len(text)-16000:]
 	}
-	var lines []string
+
+	var userTexts []string
 	for _, line := range strings.Split(text, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
+		line = strings.TrimSpace(line)
+		if line == "" {
 			continue
 		}
-		if strings.Contains(trimmed, `"type":"tool_result"`) {
+		var msg map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &msg); err != nil {
 			continue
 		}
-		if strings.Contains(trimmed, `"role":"user"`) ||
-			strings.Contains(trimmed, `"role": "user"`) ||
-			strings.HasPrefix(trimmed, "user:") ||
-			strings.HasPrefix(trimmed, "User:") {
-			lines = append(lines, trimmed)
+		// Only user-turn messages, not assistant or system
+		if t, _ := msg["type"].(string); t != "user" {
+			continue
+		}
+		// Extract text content blocks (skip tool_result blocks)
+		inner := msg["message"]
+		if inner == nil {
+			continue
+		}
+		innerMsg, ok := inner.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		content, _ := innerMsg["content"].([]interface{})
+		for _, block := range content {
+			b, ok := block.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if t, _ := b["type"].(string); t != "text" {
+				continue
+			}
+			if txt, _ := b["text"].(string); txt != "" {
+				userTexts = append(userTexts, txt)
+			}
 		}
 	}
-	if len(lines) == 0 {
-		if len(text) > 2000 {
-			text = text[len(text)-2000:]
-		}
-		return text
+	if len(userTexts) == 0 {
+		return ""
 	}
-	return strings.Join(lines, "\n")
+	result := strings.Join(userTexts, "\n")
+	if len(result) > 2000 {
+		result = result[len(result)-2000:]
+	}
+	return result
 }
 
 // ---- main classification logic ----
