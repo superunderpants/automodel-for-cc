@@ -1,6 +1,5 @@
 # automodel-for-cc Windows installer
 # Run: irm https://raw.githubusercontent.com/superunderpants/automodel-for-cc/master/install.ps1 | iex
-param([string]$ApiKey)
 
 $ErrorActionPreference = "Stop"
 $repo = "superunderpants/automodel-for-cc"
@@ -18,20 +17,59 @@ $url = "https://github.com/$repo/releases/latest/download/$binName"
 Invoke-WebRequest -Uri $url -OutFile $binaryPath -UseBasicParsing
 Write-Host "       -> $binaryPath"
 
-# 2. API key
-Write-Host "[2/3] Configuring API key..."
-if (-not $ApiKey) {
-    $ApiKey = [Environment]::GetEnvironmentVariable("DEEPSEEK_API_KEY", "User")
+# 2. Provider & API key
+Write-Host "[2/3] Configuring LLM provider..."
+Write-Host ""
+Write-Host "  [1] DeepSeek"
+Write-Host "  [2] OpenAI"
+Write-Host "  [3] Anthropic"
+Write-Host "  [4] OpenRouter"
+Write-Host "  [5] Ollama (local, no API key needed)"
+Write-Host "  [6] Custom (any OpenAI-compatible API)"
+Write-Host ""
+
+$providers = @{
+    "1" = @{name="deepseek";  env="DEEPSEEK_API_KEY"}
+    "2" = @{name="openai";    env="OPENAI_API_KEY"}
+    "3" = @{name="anthropic"; env="ANTHROPIC_API_KEY"}
+    "4" = @{name="openrouter"; env="OPENROUTER_API_KEY"}
+    "5" = @{name="ollama";    env=""}
+    "6" = @{name="custom";    env="AUTO_GUARD_API_KEY"}
 }
-if (-not $ApiKey) {
-    $ApiKey = Read-Host "Enter your DeepSeek API key (or press Enter to skip)"
-}
-if ($ApiKey) {
-    [Environment]::SetEnvironmentVariable("DEEPSEEK_API_KEY", $ApiKey, "User")
-    Write-Host "       -> DEEPSEEK_API_KEY set (restart terminal to take effect)"
+
+$choice = Read-Host "Choose provider [1-6]"
+if (-not $providers.ContainsKey($choice) -or $choice -eq "0") {
+    Write-Host "       -> Skipping, defaulting to DeepSeek"
+    $provider = "deepseek"
+    $envKey = "DEEPSEEK_API_KEY"
 } else {
-    Write-Host "       -> skipped (set DEEPSEEK_API_KEY manually)"
+    $provider = $providers[$choice].name
+    $envKey = $providers[$choice].env
 }
+
+Write-Host "       -> Provider: $provider"
+
+if ($choice -eq "5") {
+    Write-Host "       -> Ollama doesn't need an API key (local)"
+} elseif ($choice -eq "6") {
+    $baseUrl = Read-Host "Enter base URL"
+    [Environment]::SetEnvironmentVariable("AUTO_GUARD_BASE_URL", $baseUrl, "User")
+    $apiKey = Read-Host "Enter API key (or press Enter to skip)"
+    if ($apiKey) {
+        [Environment]::SetEnvironmentVariable("AUTO_GUARD_API_KEY", $apiKey, "User")
+    }
+} else {
+    $apiKey = Read-Host "Enter API key (or press Enter to skip)"
+    if ($apiKey) {
+        [Environment]::SetEnvironmentVariable($envKey, $apiKey, "User")
+    }
+}
+
+if ($provider -ne "deepseek") {
+    [Environment]::SetEnvironmentVariable("AUTO_GUARD_PROVIDER", $provider, "User")
+}
+
+Write-Host "       -> Done (restart terminal to take effect)"
 
 # 3. Hook
 Write-Host "[3/3] Setting up Claude Code hook..."

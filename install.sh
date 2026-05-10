@@ -22,19 +22,55 @@ curl -fsSL -o "$BINARY_PATH" "https://github.com/${REPO}/releases/latest/downloa
 chmod +x "$BINARY_PATH"
 echo "       -> $BINARY_PATH"
 
-# 2. API key
-echo "[2/3] Configuring API key..."
-if [ -z "${DEEPSEEK_API_KEY:-}" ]; then
-    read -rp "Enter your DeepSeek API key (or press Enter to skip): " key
-    if [ -n "$key" ]; then
-        echo "export DEEPSEEK_API_KEY=\"$key\"" >> "${HOME}/.bashrc"
-        echo "       -> added to ~/.bashrc"
-    else
-        echo "       -> skipped (set DEEPSEEK_API_KEY manually)"
-    fi
+# 2. Provider & API key
+echo "[2/3] Configuring LLM provider..."
+echo ""
+echo "  [1] DeepSeek"
+echo "  [2] OpenAI"
+echo "  [3] Anthropic"
+echo "  [4] OpenRouter"
+echo "  [5] Ollama (local, no API key needed)"
+echo "  [6] Custom (any OpenAI-compatible API)"
+echo ""
+
+read -rp "Choose provider [1-6]: " choice
+choice="${choice:-0}"
+
+provider=""
+env_key=""
+case "$choice" in
+  1) provider="deepseek";   env_key="DEEPSEEK_API_KEY" ;;
+  2) provider="openai";     env_key="OPENAI_API_KEY" ;;
+  3) provider="anthropic";  env_key="ANTHROPIC_API_KEY" ;;
+  4) provider="openrouter"; env_key="OPENROUTER_API_KEY" ;;
+  5) provider="ollama";     env_key="" ;;
+  6) provider="custom";     env_key="AUTO_GUARD_API_KEY" ;;
+  *) provider="deepseek";   env_key="DEEPSEEK_API_KEY" ;;
+esac
+
+echo "       -> Provider: $provider"
+
+if [ "$choice" = "5" ]; then
+  echo "       -> Ollama doesn't need an API key (local)"
+elif [ "$choice" = "6" ]; then
+  read -rp "Enter base URL: " base_url
+  echo "export AUTO_GUARD_BASE_URL=\"$base_url\"" >> "${HOME}/.bashrc"
+  read -rp "Enter API key (or press Enter to skip): " key
+  if [ -n "$key" ]; then
+    echo "export AUTO_GUARD_API_KEY=\"$key\"" >> "${HOME}/.bashrc"
+  fi
 else
-    echo "       -> DEEPSEEK_API_KEY already set"
+  read -rp "Enter API key (or press Enter to skip): " key
+  if [ -n "$key" ]; then
+    echo "export ${env_key}=\"$key\"" >> "${HOME}/.bashrc"
+  fi
 fi
+
+if [ "$provider" != "deepseek" ]; then
+  echo "export AUTO_GUARD_PROVIDER=\"$provider\"" >> "${HOME}/.bashrc"
+fi
+
+echo "       -> Added to ~/.bashrc (source ~/.bashrc or restart terminal)"
 
 # 3. Hook
 echo "[3/3] Setting up Claude Code hook..."
