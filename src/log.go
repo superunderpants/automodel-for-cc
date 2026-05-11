@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 )
@@ -76,10 +75,4 @@ func logBlock() func() {
 		logMu.Unlock()
 		classifyMu.Unlock()
 	}
-}
-
-// ---- path helpers (used by guard.go) ----
-
-func hasPathSep(s string) bool {
-	return strings.Contains(s, "/") || strings.Contains(s, "\\") || strings.Contains(s, string(filepath.Separator))
 }

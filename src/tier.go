@@ -48,20 +48,19 @@ var readOnlyBashExact = map[string]bool{
 	"date":      true,
 }
 
-// ---- Tier 2: safe tools when inside project ----
-
-var tier2Tools = map[string]bool{
-	"Write":         true,
-	"Edit":          true,
-	"MultiEdit":     true,
-	"NotebookEdit":  true,
-}
-
-// ---- known safe Bash tools that write (project context validates them) ----
+// ---- Tier 2: Bash write commands inside project ----
 
 var tier2BashPrefixes = []string{
 	"mkdir ", "touch ", "cp ", "mv ", "rename ",
 	"ln ", "chmod ", "chown ",
+}
+
+// tier2Tools are tools whose writes are safe when inside the project.
+var tier2Tools = map[string]bool{
+	"Write":        true,
+	"Edit":         true,
+	"MultiEdit":    true,
+	"NotebookEdit": true,
 }
 
 // ---- Tier 3: everything else goes to LLM ----

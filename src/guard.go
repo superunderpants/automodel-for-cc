@@ -115,22 +115,32 @@ func classify(req *HookRequest) *Decision {
 		return allowDecision("tier 1: safe read-only tool")
 	}
 
-	// Tier 1: Bash with read-only patterns
-	if toolName == "Bash" {
+	// Tier 1 + Tier 2: Bash — only if no shell operators (redirects, pipes, chains, etc.)
+	if toolName == "Bash" && !hasShellOperators(cmd) {
 		if isReadOnlyBash(cmd) {
 			logSection("RESULT - TIER 1")
 			logKV("decision", "allow")
 			logKV("reason", "read-only bash command")
 			return allowDecision("tier 1: read-only bash command")
 		}
-		// Tier 2: Bash safe writes inside project
+		// Tier 2: Bash with whitelisted write commands inside project
+		// All non-flag file arguments must be inside the project root.
 		if isTier2Bash(cmd) {
-			target := extractBashTarget(cmd)
-			if target != "" && isInsideProject(target) {
-				logSection("RESULT - TIER 2")
-				logKV("decision", "allow")
-				logKV("reason", "safe bash write inside project")
-				return allowDecision("tier 2: safe bash write inside project")
+			targets := extractBashTargets(cmd)
+			if len(targets) > 0 {
+				allInside := true
+				for _, t := range targets {
+					if !isInsideProject(t) {
+						allInside = false
+						break
+					}
+				}
+				if allInside {
+					logSection("RESULT - TIER 2")
+					logKV("decision", "allow")
+					logKV("reason", "safe bash write inside project")
+					return allowDecision("tier 2: safe bash write inside project")
+				}
 			}
 		}
 	}
@@ -200,6 +210,15 @@ func isReadOnlyBash(cmd string) bool {
 	return false
 }
 
+func hasShellOperators(cmd string) bool {
+	for _, op := range []string{">", ">>", "<", "|", "&&", "||", ";", "&", "`", "$("} {
+		if strings.Contains(cmd, op) {
+			return true
+		}
+	}
+	return false
+}
+
 func isTier2Bash(cmd string) bool {
 	trimmed := strings.TrimSpace(cmd)
 	for _, prefix := range tier2BashPrefixes {
@@ -210,18 +229,29 @@ func isTier2Bash(cmd string) bool {
 	return false
 }
 
-func extractBashTarget(cmd string) string {
+func extractBashTargets(cmd string) []string {
 	fields := strings.Fields(cmd)
-	for i := len(fields) - 1; i >= 0; i-- {
+	if len(fields) < 2 {
+		return nil
+	}
+	var targets []string
+	for i := 1; i < len(fields); i++ {
 		f := fields[i]
-		if f == "" || strings.HasPrefix(f, "-") {
+		if strings.HasPrefix(f, "-") {
 			continue
 		}
-		if hasPathSep(f) || strings.HasSuffix(f, ".tex") || strings.HasSuffix(f, ".txt") {
-			return f
+		targets = append(targets, stripQuotes(f))
+	}
+	return targets
+}
+
+func stripQuotes(s string) string {
+	if len(s) >= 2 {
+		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
+			return s[1 : len(s)-1]
 		}
 	}
-	return ""
+	return s
 }
 
 // ---- decision builders ----

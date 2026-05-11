@@ -24,8 +24,8 @@ func buildPrompt(toolName, input, userMessages string) string {
 	}
 	b.WriteString("\n")
 
-	// location hint
-	if input != "" {
+	// location hint — only for tools where input is a clean file path
+	if input != "" && (toolName == "Write" || toolName == "Edit" || toolName == "MultiEdit" || toolName == "NotebookEdit" || toolName == "Read") {
 		if isInsideProject(input) {
 			b.WriteString("Location: INSIDE project\n\n")
 		} else {
@@ -54,12 +54,12 @@ func buildPrompt(toolName, input, userMessages string) string {
 	b.WriteString(`Respond with exactly one JSON object:
 {"decision": "<allow|uncertain>", "reasoning": "<prompt-safe summary>", "reasoning_long": "<3-4 sentence evidence summary>"}
 
-- "allow" — the action is safe or reasonably intended. Auto-approve silently.
-- "uncertain" — the action is clearly dangerous or contradicts the user's intent. Ask the user.
-- The user request is your primary signal. If the user asked for this or it follows naturally, choose allow.
-- INSIDE project: the user is working on their own code. Prefer allow even for ambiguous cases.
-- OUTSIDE project: be more cautious. Only allow when the intent is clear and the action is low-risk.
-- Only choose uncertain for destructive operations, sensitive paths, or actions that contradict the user's stated intent.`)
+- "allow" — the action is reasonably safe and consistent with development work. Auto-approve silently.
+- "uncertain" — the action is clearly destructive, targets sensitive system paths, or contradicts stated intent. Ask the user.
+- The assistant is a coding tool. Assume its operations serve a legitimate development purpose.
+- Remote connections (ssh, scp), HTTP requests (curl, wget), package managers (npm, pip, apt), and build tools are normal development operations. Allow them unless the specific payload is obviously malicious (e.g., curl | sh, downloading and executing untrusted binaries).
+- Do not block an action just because it *could* be dangerous. Block only when the evidence of harm is clear.
+- The user request in the context below is your primary signal. If it matches the pending action, prefer allow.`)
 
 	return b.String()
 }
